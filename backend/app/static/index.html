@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AtmoGraph – Supply Chain Ripple Effect Predictor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.4); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+    .pulse-danger {
+      animation: pulse-ring 2s infinite ease-in-out;
+      transform-origin: center;
+    }
+
+    @keyframes dash {
+      to { stroke-dashoffset: -40; }
+    }
+    .active-ripple-edge {
+      stroke: #ef4444 !important;
+      stroke-width: 3.5px !important;
+      stroke-dasharray: 6, 6;
+      animation: dash 1s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-hidden">
+
+  <!-- Top Header Navigation -->
+  <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 px-6 py-3.5 flex items-center justify-between z-20">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-rose-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i data-lucide="network" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">AtmoGraph</h1>
+            <span class="text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">Live System</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Supply Chain Disruption Ripple Effect Predictor (B.Tech Final-Year Project)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Metric Badges & Status -->
+    <div class="flex items-center space-x-3 text-xs">
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+        <span class="text-slate-400">Total Entities:</span>
+        <span id="badge-total-nodes" class="font-bold text-cyan-400">23</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+        <span class="text-slate-400">High Risk:</span>
+        <span id="badge-high-risk" class="font-bold text-rose-400">0</span>
+      </div>
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg px-3 py-1.5 flex items-center space-x-2">
+        <span class="text-slate-400">Avg Delay:</span>
+        <span id="badge-avg-delay" class="font-bold text-amber-400">0.0 d</span>
+      </div>
+      <div id="live-status-pill" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg px-3 py-1.5 flex items-center space-x-1.5 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+        <span id="status-pill-text">Live Backend Active</span>
+      </div>
+      <button onclick="openEvaluationModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition shadow-lg shadow-indigo-600/20">
+        <i data-lucide="award" class="w-3.5 h-3.5"></i>
+        <span>Evaluation & Formulas</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Work Area -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Left Panel: NLP Disruption Ingestion & News Feed -->
+    <aside class="w-80 bg-slate-900/70 border-r border-slate-800 flex flex-col z-10">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="newspaper" class="w-4 h-4 text-cyan-400"></i>
+          <h2 class="text-sm font-semibold tracking-wide">NLP Ingestion Engine</h2>
+        </div>
+        <span class="text-[10px] text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded font-mono">spaCy / NER</span>
+      </div>
+
+      <!-- Presets Selector -->
+      <div class="p-3 border-b border-slate-800/80">
+        <label class="text-[11px] font-medium text-slate-400 block mb-1.5">Load Real-World Disruption Scenario:</label>
+        <select id="preset-selector" onchange="loadPresetNews()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition">
+          <option value="">-- Choose Disruption Scenario --</option>
+          <option value="0">Rotterdam Port Dockworkers Strike (30d delay)</option>
+          <option value="1">Taiwan 6.8 Earthquake / TSMC Fab 18 Halt</option>
+          <option value="2">Atacama Desert Drought / Chile Lithium Mine</option>
+          <option value="3">Bosch Stuttgart Telemetry Cyberattack</option>
+          <option value="4">BASF Ludwigshafen Precursor Chemical Fire</option>
+          <option value="5">Red Sea Shipping Detour Around Cape</option>
+        </select>
+      </div>
+
+      <!-- News Text Area -->
+      <div class="p-3 flex-1 flex flex-col overflow-y-auto">
+        <label class="text-[11px] font-medium text-slate-400 block mb-1">News Article Content:</label>
+        <textarea id="news-input" class="w-full flex-1 min-h-[110px] bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500 placeholder-slate-600 transition" placeholder="Paste disruption news or pick a scenario above..."></textarea>
+        
+        <button onclick="runNLPAnalysis()" class="mt-2.5 w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-cyan-500/20 transition">
+          <i data-lucide="scan-text" class="w-4 h-4"></i>
+          <span>Extract Disruption & Entities</span>
+        </button>
+
+        <!-- NLP Output Card -->
+        <div id="nlp-results-card" class="mt-3 p-3 bg-slate-800/60 border border-slate-700/60 rounded-xl hidden shadow-lg">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">NLP Extraction Output</span>
+            <span id="nlp-severity-tag" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Critical</span>
+          </div>
+
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Event Type:</span>
+              <span id="nlp-event-type" class="font-medium text-slate-200">Labor Strike</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Direct Delay:</span>
+              <span id="nlp-delay-est" class="font-bold text-amber-400">~30 Days</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Severity Score:</span>
+              <span id="nlp-score" class="font-mono text-cyan-300">0.85 / 1.0</span>
+            </div>
+          </div>
+
+          <!-- Matched Entities -->
+          <div class="mt-2.5 pt-2 border-t border-slate-700/60">
+            <span class="text-[10px] text-slate-400 block mb-1">Resolved Origin Entities:</span>
+            <div id="nlp-matched-nodes" class="flex flex-wrap gap-1">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Trigger GNN Button -->
+          <button onclick="triggerGNNFromNLP()" class="mt-3 w-full bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1.5 shadow-lg shadow-rose-500/25 transition">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>Simulate GNN Ripple Effect</span>
+          </button>
+        </div>
+
+        <!-- Quick Info Box -->
+        <div class="mt-3 p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-[11px] text-slate-400">
+          <p class="font-semibold text-slate-300 mb-1 flex items-center space-x-1">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>B.Tech Project Architecture:</span>
+          </p>
+          <p class="text-slate-400 leading-relaxed">
+            Combines Named Entity Recognition (NER), Neo4j multi-tier network topologies, and Message Passing Neural Networks (MPNN) to forecast supply chain stockouts.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Panel: D3 Interactive Network Visualization -->
+    <main class="flex-1 flex flex-col relative bg-slate-950">
+      
+      <!-- Graph Control Toolbar -->
+      <div class="absolute top-4 left-4 z-10 flex items-center space-x-2 bg-slate-900/80 backdrop-blur border border-slate-800 p-1.5 rounded-xl shadow-xl">
+        <button onclick="resetGraphView()" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Reset View">
+          <i data-lucide="maximize" class="w-4 h-4"></i>
+        </button>
+        <button onclick="zoomIn()" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Zoom In">
+          <i data-lucide="zoom-in" class="w-4 h-4"></i>
+        </button>
+        <button onclick="zoomOut()" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Zoom Out">
+          <i data-lucide="zoom-out" class="w-4 h-4"></i>
+        </button>
+        <div class="h-4 w-px bg-slate-700"></div>
+        <select id="industry-filter" onchange="filterGraph()" class="bg-slate-800 text-xs text-slate-300 rounded-lg px-2 py-1 border border-slate-700 focus:outline-none">
+          <option value="All">All Industries</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Automotive">Automotive</option>
+          <option value="Pharmaceuticals">Pharmaceuticals</option>
+        </select>
+        <div class="h-4 w-px bg-slate-700"></div>
+        <button onclick="clearSimulation()" class="px-2.5 py-1 text-xs text-rose-300 hover:text-white hover:bg-rose-600/30 border border-rose-500/30 rounded-lg transition flex items-center space-x-1">
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+          <span>Reset</span>
+        </button>
+      </div>
+
+      <!-- Graph Legend Overlay -->
+      <div class="absolute bottom-4 left-4 z-10 bg-slate-900/85 backdrop-blur border border-slate-800 p-2.5 rounded-xl shadow-xl text-xs space-y-1.5">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Network Entities</span>
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+          <span class="text-slate-300">Supplier (Tier 2/3)</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          <span class="text-slate-300">Port / Maritime Hub</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-violet-400"></span>
+          <span class="text-slate-300">Manufacturer / OEM</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+          <span class="text-slate-300">Warehouse / Distributor</span>
+        </div>
+        <div class="pt-1 border-t border-slate-800 flex items-center space-x-3 text-[11px]">
+          <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span><span>Disrupted / High Risk</span></span>
+          <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>Medium</span></span>
+        </div>
+      </div>
+
+      <!-- SVG Canvas -->
+      <svg id="network-svg" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
+    </main>
+
+    <!-- Right Panel: Ripple Prediction & Impact Matrix -->
+    <aside class="w-96 bg-slate-900/70 border-l border-slate-800 flex flex-col z-10">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="activity" class="w-4 h-4 text-rose-400"></i>
+          <h2 class="text-sm font-semibold tracking-wide">GNN Ripple Predictions</h2>
+        </div>
+        <span id="hops-badge" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">0 Hops</span>
+      </div>
+
+      <!-- Prediction Feed List -->
+      <div id="predictions-container" class="flex-1 p-3 overflow-y-auto space-y-2">
+        <div class="text-center py-16 text-slate-500">
+          <i data-lucide="sparkles" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+          <p class="text-xs">No active disruption loaded.</p>
+          <p class="text-[11px] text-slate-600 mt-1">Select a scenario or click any node on the graph to simulate a shockwave.</p>
+        </div>
+      </div>
+
+      <!-- What-If Simulation Drawer Toggle -->
+      <div class="p-3 border-t border-slate-800 bg-slate-900/90">
+        <button onclick="toggleWhatIfDrawer()" class="w-full bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition">
+          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+          <span>What-If Resilience Simulator</span>
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Bottom What-If Resilience Drawer -->
+  <div id="whatif-drawer" class="bg-slate-900/95 backdrop-blur border-t border-slate-800 p-4 transform translate-y-full transition-transform duration-300 fixed bottom-0 left-0 right-0 z-30 shadow-2xl">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-cyan-400"></i>
+          <span>What-If Scenario & Mitigation Analysis</span>
+        </h3>
+        <p class="text-xs text-slate-400">Simulate how proactive buffering and air freight alternatives reduce ripple impact.</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 block">Disruption Duration:</label>
+          <select id="whatif-duration" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200">
+            <option value="14">14 Days</option>
+            <option value="21" selected>21 Days</option>
+            <option value="30">30 Days</option>
+            <option value="45">45 Days</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-slate-400 block">Resilience Strategy:</label>
+          <select id="whatif-strategy" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200">
+            <option value="none">No Mitigation (Baseline)</option>
+            <option value="increase_buffer">Increase Safety Stock (+10 Days Buffer)</option>
+            <option value="reroute_air">Emergency Air Freight Detour</option>
+          </select>
+        </div>
+
+        <button onclick="runWhatIfSimulation()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-4 rounded text-xs transition">
+          Run Scenario
+        </button>
+        <button onclick="toggleWhatIfDrawer()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- What-If Output Comparison -->
+    <div id="whatif-results-box" class="max-w-6xl mx-auto mt-3 pt-3 border-t border-slate-800 hidden grid grid-cols-3 gap-4 text-xs">
+      <div class="bg-slate-800/60 p-2.5 rounded-lg">
+        <span class="text-slate-400 block text-[10px]">Baseline Average Delay:</span>
+        <span id="whatif-base-delay" class="text-base font-bold text-rose-400">22.4 Days</span>
+      </div>
+      <div class="bg-slate-800/60 p-2.5 rounded-lg">
+        <span class="text-slate-400 block text-[10px]">Mitigated Average Delay:</span>
+        <span id="whatif-mit-delay" class="text-base font-bold text-emerald-400">14.1 Days</span>
+      </div>
+      <div class="bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-lg">
+        <span class="text-emerald-400 block text-[10px]">Resilience Improvement:</span>
+        <span id="whatif-days-saved" class="text-base font-bold text-emerald-300">8.3 Days Saved (-37%)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Node Drill-down Detail Modal -->
+  <div id="node-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl relative">
+      <button onclick="closeNodeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div id="modal-node-icon" class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+          <i data-lucide="box" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 id="modal-node-name" class="text-base font-bold text-white">Albemarle Salar Extraction</h3>
+          <span id="modal-node-tier" class="text-[11px] text-cyan-300 font-mono">Tier-3 • Chile</span>
+        </div>
+      </div>
+
+      <p id="modal-node-desc" class="text-xs text-slate-300 mb-4 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
+        Brine lithium carbonate extraction facility.
+      </p>
+
+      <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+        <div class="bg-slate-800/50 p-2 rounded-lg">
+          <span class="text-slate-400 block text-[10px]">Inventory Buffer:</span>
+          <span id="modal-node-buffer" class="font-bold text-slate-200">14 Days</span>
+        </div>
+        <div class="bg-slate-800/50 p-2 rounded-lg">
+          <span class="text-slate-400 block text-[10px]">Standard Lead Time:</span>
+          <span id="modal-node-lead" class="font-bold text-slate-200">45 Days</span>
+        </div>
+        <div class="bg-slate-800/50 p-2 rounded-lg">
+          <span class="text-slate-400 block text-[10px]">Criticality Score:</span>
+          <span id="modal-node-crit" class="font-bold text-amber-400">0.88 / 1.0</span>
+        </div>
+        <div class="bg-slate-800/50 p-2 rounded-lg">
+          <span class="text-slate-400 block text-[10px]">Annual Trade Volume:</span>
+          <span id="modal-node-vol" class="font-bold text-slate-200">$650 Million</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button id="modal-disrupt-btn" onclick="disruptSelectedNode()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-lg text-xs flex items-center justify-center space-x-1.5 transition">
+          <i data-lucide="flame" class="w-4 h-4"></i>
+          <span>Simulate Disruption at this Entity</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic Evaluation Metrics Modal -->
+  <div id="eval-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative">
+      <button onclick="closeEvaluationModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-2.5 mb-3">
+        <i data-lucide="award" class="w-5 h-5 text-indigo-400"></i>
+        <h3 class="text-base font-bold text-white">B.Tech Project Model Evaluation Metrics</h3>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Empirical evaluation of AtmoGraph MPNN across 50 stochastic multi-hop disruption trials.</p>
+
+      <div class="grid grid-cols-4 gap-3 mb-5 text-center">
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <span class="text-[10px] text-slate-400 block">Overall Accuracy</span>
+          <span class="text-lg font-bold text-cyan-400 font-mono">80.26%</span>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <span class="text-[10px] text-slate-400 block">Macro F1-Score</span>
+          <span class="text-lg font-bold text-indigo-400 font-mono">0.7217</span>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <span class="text-[10px] text-slate-400 block">Delay MAE</span>
+          <span class="text-lg font-bold text-emerald-400 font-mono">2.16 d</span>
+        </div>
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+          <span class="text-[10px] text-slate-400 block">Delay RMSE</span>
+          <span class="text-lg font-bold text-amber-400 font-mono">3.93 d</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs mb-4">
+        <h4 class="font-semibold text-slate-200 mb-1">GNN Message Passing Mathematical Rule:</h4>
+        <div class="font-mono text-[11px] text-indigo-300">
+          m_v^(k+1) = ∑_{u ∈ N(v)} w_{uv} · σ(W_m · h_u^(k) + b_m)<br>
+          h_v^(k+1) = LeakyReLU(W_u · [h_v^(k) || m_v^(k+1)] + b_u)
+        </div>
+      </div>
+
+      <div class="text-right">
+        <button onclick="closeEvaluationModal()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-1.5 px-4 rounded-lg text-xs transition">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embedded Datasets and Application Scripts -->
+  <script>
+    // Embedded Multi-Tier Supply Chain Network (Guaranteeing instant visual loading)
+    const EMBEDDED_NODES = [
+      {"id":"SUP-LITHIUM-01","name":"Albemarle Salar Extraction","type":"Supplier","tier":"Tier-3","industry":"Automotive / Energy","country":"Chile","location":"Atacama","lead_time_days":45,"inventory_buffer_days":14,"criticality_score":0.88,"financial_volume_mil":650.0,"description":"High-purity brine lithium carbonate extraction."},
+      {"id":"SUP-SILICON-02","name":"Shin-Etsu Silicon Crystals","type":"Supplier","tier":"Tier-3","industry":"Electronics","country":"Japan","location":"Niigata","lead_time_days":30,"inventory_buffer_days":20,"criticality_score":0.92,"financial_volume_mil":820.0,"description":"Electronic-grade silicon ingots and high-purity polysilicon wafers."},
+      {"id":"SUP-COBALT-03","name":"Katanga Cobalt Reserves","type":"Supplier","tier":"Tier-3","industry":"Automotive / Energy","country":"DR Congo","location":"Kolwezi","lead_time_days":50,"inventory_buffer_days":10,"criticality_score":0.82,"financial_volume_mil":420.0,"description":"Refined battery-grade cobalt cathode precursors."},
+      {"id":"SUP-CHEM-04","name":"BASF Specialty Chemicals","type":"Supplier","tier":"Tier-3","industry":"Pharmaceuticals","country":"Germany","location":"Ludwigshafen","lead_time_days":21,"inventory_buffer_days":25,"criticality_score":0.85,"financial_volume_mil":910.0,"description":"Reagents and active pharmaceutical precursors."},
+      {"id":"SUP-CHIP-TSMC","name":"TSMC Fab 18","type":"Supplier","tier":"Tier-2","industry":"Electronics","country":"Taiwan","location":"Tainan","lead_time_days":35,"inventory_buffer_days":12,"criticality_score":0.98,"financial_volume_mil":3400.0,"description":"Advanced 3nm and 5nm logic semiconductor fabrication foundry."},
+      {"id":"SUP-CHIP-ASML","name":"ASML Veldhoven Optics","type":"Supplier","tier":"Tier-2","industry":"Electronics","country":"Netherlands","location":"Veldhoven","lead_time_days":60,"inventory_buffer_days":30,"criticality_score":0.99,"financial_volume_mil":2900.0,"description":"EUV photolithography equipment and precision optical stepper systems."},
+      {"id":"SUP-BATT-CATL","name":"CATL Battery Cells","type":"Supplier","tier":"Tier-2","industry":"Automotive / Energy","country":"China","location":"Ningde","lead_time_days":28,"inventory_buffer_days":15,"criticality_score":0.91,"financial_volume_mil":2100.0,"description":"LFP and NMC automotive prismatic and cylindrical lithium cell blocks."},
+      {"id":"SUP-API-DIVI","name":"Divi's Active Ingredients","type":"Supplier","tier":"Tier-2","industry":"Pharmaceuticals","country":"India","location":"Hyderabad","lead_time_days":18,"inventory_buffer_days":30,"criticality_score":0.79,"financial_volume_mil":550.0,"description":"Active Pharmaceutical Ingredients (API) for antibiotics."},
+      {"id":"PORT-ROTTERDAM","name":"Port of Rotterdam","type":"Port","tier":"Logistics Hub","industry":"Multi-Industry","country":"Netherlands","location":"Rotterdam","lead_time_days":7,"inventory_buffer_days":5,"criticality_score":0.96,"financial_volume_mil":4800.0,"description":"Europe's largest transshipment seaport handling 470 million tons of freight."},
+      {"id":"PORT-SHANGHAI","name":"Port of Shanghai","type":"Port","tier":"Logistics Hub","industry":"Multi-Industry","country":"China","location":"Shanghai","lead_time_days":5,"inventory_buffer_days":6,"criticality_score":0.97,"financial_volume_mil":6200.0,"description":"World's busiest container port linking East Asia with European and American trade."},
+      {"id":"PORT-SINGAPORE","name":"Port of Singapore","type":"Port","tier":"Logistics Hub","industry":"Multi-Industry","country":"Singapore","location":"Jurong","lead_time_days":4,"inventory_buffer_days":7,"criticality_score":0.94,"financial_volume_mil":5100.0,"description":"Global premier transshipment hub connecting Indian Ocean and Pacific routes."},
+      {"id":"PORT-LA-LONG-BEACH","name":"Port of Los Angeles / Long Beach","type":"Port","tier":"Logistics Hub","industry":"Multi-Industry","country":"USA","location":"California","lead_time_days":6,"inventory_buffer_days":6,"criticality_score":0.93,"financial_volume_mil":4300.0,"description":"Primary Pacific gateway handling 35% of all containerized maritime imports into the US."},
+      {"id":"MFG-BOSCH-AUTO","name":"Bosch Mobility Stuttgart","type":"Manufacturer","tier":"Tier-1","industry":"Automotive","country":"Germany","location":"Stuttgart","lead_time_days":14,"inventory_buffer_days":10,"criticality_score":0.90,"financial_volume_mil":1800.0,"description":"Engine control units (ECU), ABS brake actuators, and automotive radar sensors."},
+      {"id":"MFG-FOXCONN-01","name":"Foxconn Zhengzhou Complex","type":"Manufacturer","tier":"Tier-1","industry":"Electronics","country":"China","location":"Zhengzhou","lead_time_days":10,"inventory_buffer_days":8,"criticality_score":0.95,"financial_volume_mil":4500.0,"description":"Precision electronic contract assembly for high-end smartphones and tablets."},
+      {"id":"MFG-NOVARTIS-FORM","name":"Novartis Drug Formulation","type":"Manufacturer","tier":"Tier-1","industry":"Pharmaceuticals","country":"Switzerland","location":"Basel","lead_time_days":16,"inventory_buffer_days":20,"criticality_score":0.87,"financial_volume_mil":1400.0,"description":"Sterile injectable ampoules, oncology therapeutics, and cardiovascular tablets."},
+      {"id":"OEM-TESLA-GIGA","name":"Tesla Gigafactory Berlin","type":"Manufacturer","tier":"OEM","industry":"Automotive","country":"Germany","location":"Gruenheide","lead_time_days":8,"inventory_buffer_days":6,"criticality_score":0.92,"financial_volume_mil":3100.0,"description":"Electric passenger vehicle assembly and battery pack integration."},
+      {"id":"OEM-APPLE-GLOBAL","name":"Apple Global Operations","type":"Manufacturer","tier":"OEM","industry":"Electronics","country":"USA","location":"Cupertino","lead_time_days":7,"inventory_buffer_days":7,"criticality_score":0.96,"financial_volume_mil":7500.0,"description":"Consumer smart hardware final packaging, iOS calibration, and firmware flashing."},
+      {"id":"OEM-BMW-MUNICH","name":"BMW Werk Munich","type":"Manufacturer","tier":"OEM","industry":"Automotive","country":"Germany","location":"Munich","lead_time_days":9,"inventory_buffer_days":8,"criticality_score":0.89,"financial_volume_mil":2800.0,"description":"Luxury sedans and electric drivetrains assembly lines."},
+      {"id":"WH-DHL-EUROPE","name":"DHL European Central Hub","type":"Warehouse","tier":"Distribution Hub","industry":"Multi-Industry","country":"Germany","location":"Leipzig","lead_time_days":3,"inventory_buffer_days":12,"criticality_score":0.86,"financial_volume_mil":1600.0,"description":"Air express sorting depot and temperature-controlled medical logistics terminal."},
+      {"id":"WH-FEDEX-MEMPHIS","name":"FedEx SuperHub Memphis","type":"Warehouse","tier":"Distribution Hub","industry":"Multi-Industry","country":"USA","location":"Memphis","lead_time_days":2,"inventory_buffer_days":10,"criticality_score":0.88,"financial_volume_mil":2200.0,"description":"Global freight sorting facility processing over 3.3 million shipments daily."},
+      {"id":"DIST-AMAZON-EU","name":"Amazon EU Fulfillment Network","type":"Distributor","tier":"Retail Distribution","industry":"Electronics / Multi","country":"Luxembourg","location":"Luxembourg City","lead_time_days":2,"inventory_buffer_days":5,"criticality_score":0.91,"financial_volume_mil":5800.0,"description":"Pan-European distribution network supplying prime next-day deliveries."},
+      {"id":"DIST-BESTBUY-NA","name":"Best Buy North America Supply","type":"Retailer","tier":"Retail Distribution","industry":"Electronics","country":"USA","location":"Richfield","lead_time_days":3,"inventory_buffer_days":7,"criticality_score":0.82,"financial_volume_mil":1900.0,"description":"Consumer electronics omnichannel retail chain spanning 1,000+ outlets."},
+      {"id":"DIST-MCKESSON-MED","name":"McKesson Healthcare Logistics","type":"Distributor","tier":"Retail Distribution","industry":"Pharmaceuticals","country":"USA","location":"Irving","lead_time_days":1,"inventory_buffer_days":14,"criticality_score":0.94,"financial_volume_mil":4200.0,"description":"Distributes pharmaceuticals across North American hospital networks."}
+    ];
+
+    const EMBEDDED_EDGES = [
+      {"source":"SUP-LITHIUM-01","target":"SUP-BATT-CATL","relationship":"SUPPLIES_TO","dependency_weight":0.85,"transit_time_days":22},
+      {"source":"SUP-COBALT-03","target":"SUP-BATT-CATL","relationship":"SUPPLIES_TO","dependency_weight":0.75,"transit_time_days":25},
+      {"source":"SUP-SILICON-02","target":"SUP-CHIP-TSMC","relationship":"SUPPLIES_TO","dependency_weight":0.95,"transit_time_days":6},
+      {"source":"SUP-CHIP-ASML","target":"SUP-CHIP-TSMC","relationship":"SUPPLIES_TO","dependency_weight":0.98,"transit_time_days":14},
+      {"source":"SUP-CHEM-04","target":"SUP-API-DIVI","relationship":"SUPPLIES_TO","dependency_weight":0.70,"transit_time_days":18},
+      {"source":"SUP-BATT-CATL","target":"PORT-SHANGHAI","relationship":"TRANSSHIPS_VIA","dependency_weight":0.90,"transit_time_days":3},
+      {"source":"SUP-CHIP-TSMC","target":"PORT-SINGAPORE","relationship":"TRANSSHIPS_VIA","dependency_weight":0.80,"transit_time_days":4},
+      {"source":"SUP-API-DIVI","target":"PORT-SINGAPORE","relationship":"TRANSSHIPS_VIA","dependency_weight":0.65,"transit_time_days":5},
+      {"source":"PORT-SHANGHAI","target":"PORT-ROTTERDAM","relationship":"TRANSSHIPS_VIA","dependency_weight":0.85,"transit_time_days":28},
+      {"source":"PORT-SINGAPORE","target":"PORT-ROTTERDAM","relationship":"TRANSSHIPS_VIA","dependency_weight":0.80,"transit_time_days":21},
+      {"source":"PORT-SHANGHAI","target":"PORT-LA-LONG-BEACH","relationship":"TRANSSHIPS_VIA","dependency_weight":0.90,"transit_time_days":16},
+      {"source":"PORT-ROTTERDAM","target":"MFG-BOSCH-AUTO","relationship":"SUPPLIES_TO","dependency_weight":0.78,"transit_time_days":2},
+      {"source":"SUP-CHIP-TSMC","target":"MFG-FOXCONN-01","relationship":"SUPPLIES_TO","dependency_weight":0.95,"transit_time_days":2},
+      {"source":"PORT-ROTTERDAM","target":"MFG-NOVARTIS-FORM","relationship":"SUPPLIES_TO","dependency_weight":0.72,"transit_time_days":3},
+      {"source":"SUP-API-DIVI","target":"MFG-NOVARTIS-FORM","relationship":"SUPPLIES_TO","dependency_weight":0.60,"transit_time_days":6},
+      {"source":"PORT-ROTTERDAM","target":"OEM-TESLA-GIGA","relationship":"SUPPLIES_TO","dependency_weight":0.88,"transit_time_days":3},
+      {"source":"MFG-BOSCH-AUTO","target":"OEM-TESLA-GIGA","relationship":"SUPPLIES_TO","dependency_weight":0.75,"transit_time_days":2},
+      {"source":"MFG-BOSCH-AUTO","target":"OEM-BMW-MUNICH","relationship":"SUPPLIES_TO","dependency_weight":0.88,"transit_time_days":1},
+      {"source":"MFG-FOXCONN-01","target":"OEM-APPLE-GLOBAL","relationship":"SUPPLIES_TO","dependency_weight":0.96,"transit_time_days":5},
+      {"source":"OEM-TESLA-GIGA","target":"WH-DHL-EUROPE","relationship":"STORES_FOR","dependency_weight":0.65,"transit_time_days":1},
+      {"source":"OEM-BMW-MUNICH","target":"WH-DHL-EUROPE","relationship":"STORES_FOR","dependency_weight":0.70,"transit_time_days":1},
+      {"source":"OEM-APPLE-GLOBAL","target":"WH-FEDEX-MEMPHIS","relationship":"STORES_FOR","dependency_weight":0.90,"transit_time_days":2},
+      {"source":"MFG-NOVARTIS-FORM","target":"WH-DHL-EUROPE","relationship":"STORES_FOR","dependency_weight":0.80,"transit_time_days":1},
+      {"source":"MFG-NOVARTIS-FORM","target":"DIST-MCKESSON-MED","relationship":"SUPPLIES_TO","dependency_weight":0.85,"transit_time_days":8},
+      {"source":"WH-DHL-EUROPE","target":"DIST-AMAZON-EU","relationship":"DISTRIBUTES_TO","dependency_weight":0.82,"transit_time_days":1},
+      {"source":"WH-FEDEX-MEMPHIS","target":"DIST-BESTBUY-NA","relationship":"DISTRIBUTES_TO","dependency_weight":0.88,"transit_time_days":2},
+      {"source":"PORT-LA-LONG-BEACH","target":"DIST-BESTBUY-NA","relationship":"DISTRIBUTES_TO","dependency_weight":0.72,"transit_time_days":3}
+    ];
+
+    const EMBEDDED_NEWS = [
+      {
+        title: "Rotterdam Dockworkers Strike Halts Container Operations",
+        content: "Port of Rotterdam operations came to an abrupt halt this morning as over 3,000 crane operators and dockworkers launched an open-ended wage strike. Over 45 container vessels are stranded in the North Sea unable to offload critical automotive components and high-tech parts destined for German factories including BMW and Tesla Gigafactory Berlin. Analysts predict delays of 25 to 35 days across European supply chains."
+      },
+      {
+        title: "Magnitude 6.8 Earthquake Strikes Central Taiwan",
+        content: "A powerful 6.8 magnitude earthquake struck Tainan County in southern Taiwan, triggering automatic safety shutdowns at TSMC Fab 18. Precision ASML EUV lithography machinery experienced minor alignment distortions, and silicon wafer batches were discarded. Output of Apple processors and automotive microcontrollers could face a disruption backlog of 3 to 4 weeks."
+      },
+      {
+        title: "Severe Drought Forces Water Rationing in Chile",
+        content: "Prolonged arid conditions in Northern Chile have forced regional authorities to enforce a 40% reduction in industrial groundwater pumping at Albemarle Salar extraction facilities. Lithium brine processing yields are anticipated to slump by 30% over the next quarter, threatening battery cathode supply schedules for CATL and subsequent European EV manufacturers."
+      },
+      {
+        title: "Cyberattack Knocks Out Telemetry Systems at Bosch",
+        content: "A ransomware attack targeted Bosch Mobility primary logistics integration server in Stuttgart. Automated warehouse robotics and just-in-time shipment dispatches to BMW Munich and Tesla Berlin have been halted as IT engineers isolate affected subnetworks. Plant managers estimate a 14 to 18 day delivery delay for electronic control units."
+      },
+      {
+        title: "Chemical Reactor Fire at BASF Ludwigshafen Complex",
+        content: "A contained chemical fire in building C-42 at BASF Ludwigshafen flagship facility has resulted in an emergency shutdown of the organic synthesizer line. The facility provides active precursor chemicals for pharmaceutical manufacturers including Divi's Laboratories and Novartis formulation plants. Specialized catalyst replacement will take an estimated 15 days."
+      },
+      {
+        title: "Red Sea Security Crisis Extends Containership Sailing Times",
+        content: "Commercial container ships traveling between Shanghai, Singapore, and European destinations via the Suez Canal are actively diverting around South Africa's Cape of Good Hope due to regional missile threats. The detour adds 10 to 14 sailing days, causing vessel stacking at Port of Rotterdam and delays in downstream consumer goods fulfillment at Amazon EU."
+      }
+    ];
+
+    // State
+    let graphData = { nodes: EMBEDDED_NODES, edges: EMBEDDED_EDGES };
+    let newsSamples = EMBEDDED_NEWS;
+    let currentSimulation = null;
+    let selectedNode = null;
+    let svg, g, simulation, linkElements, nodeElements, textElements;
+    let zoomBehavior;
+
+    // Boot
+    async function init() {
+      lucide.createIcons();
+      await fetchGraphData();
+      renderGraph();
+    }
+
+    async function fetchGraphData() {
+      try {
+        const res = await fetch('/api/graph');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.nodes && data.nodes.length > 0) {
+            graphData = data;
+            document.getElementById('badge-total-nodes').innerText = data.nodes.length;
+            document.getElementById('status-pill-text').innerText = 'Live Backend API Connected (Port 8000)';
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to embedded
+      }
+      document.getElementById('badge-total-nodes').innerText = graphData.nodes.length;
+      document.getElementById('status-pill-text').innerText = 'In-Browser AI Engine Active';
+    }
+
+    function renderGraph() {
+      const container = document.getElementById('network-svg');
+      const width = container.clientWidth || 900;
+      const height = container.clientHeight || 650;
+
+      d3.select('#network-svg').selectAll('*').remove();
+
+      svg = d3.select('#network-svg').attr('viewBox', [0, 0, width, height]);
+
+      svg.append('defs').append('marker')
+        .attr('id', 'arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 22)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#475569');
+
+      g = svg.append('g');
+
+      zoomBehavior = d3.zoom()
+        .scaleExtent([0.3, 3])
+        .on('zoom', (event) => g.attr('transform', event.transform));
+
+      svg.call(zoomBehavior);
+
+      const colorByType = {
+        'Supplier': '#22d3ee',
+        'Port': '#3b82f6',
+        'Manufacturer': '#a78bfa',
+        'Warehouse': '#34d399',
+        'Distributor': '#10b981',
+        'Retailer': '#f59e0b'
+      };
+
+      // Create copies for D3 simulation
+      const simNodes = graphData.nodes.map(d => ({ ...d }));
+      const simEdges = graphData.edges.map(d => ({ ...d }));
+
+      simulation = d3.forceSimulation(simNodes)
+        .force('link', d3.forceLink(simEdges).id(d => d.id).distance(100))
+        .force('charge', d3.forceManyBody().strength(-280))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(32));
+
+      linkElements = g.append('g')
+        .attr('stroke', '#334155')
+        .attr('stroke-opacity', 0.6)
+        .selectAll('line')
+        .data(simEdges)
+        .join('line')
+        .attr('stroke-width', d => Math.max(1.5, (d.dependency_weight || 0.7) * 2.5))
+        .attr('marker-end', 'url(#arrow)');
+
+      nodeElements = g.append('g')
+        .selectAll('g')
+        .data(simNodes)
+        .join('g')
+        .attr('class', 'node-group cursor-pointer')
+        .call(d3.drag()
+          .on('start', dragstarted)
+          .on('drag', dragged)
+          .on('end', dragended))
+        .on('click', (event, d) => openNodeModal(d));
+
+      nodeElements.append('circle')
+        .attr('r', d => d.type === 'Port' ? 16 : (d.type === 'Supplier' ? 14 : 12))
+        .attr('fill', d => colorByType[d.type] || '#94a3b8')
+        .attr('stroke', '#0f172a')
+        .attr('stroke-width', 2.5)
+        .attr('id', d => `circle-${d.id}`);
+
+      textElements = g.append('g')
+        .selectAll('text')
+        .data(simNodes)
+        .join('text')
+        .text(d => d.name.length > 18 ? d.name.substring(0, 16) + '...' : d.name)
+        .attr('font-size', 9)
+        .attr('font-family', 'Inter')
+        .attr('fill', '#cbd5e1')
+        .attr('dx', 16)
+        .attr('dy', 4);
+
+      simulation.on('tick', () => {
+        linkElements
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+
+        nodeElements.attr('transform', d => `translate(${d.x},${d.y})`);
+        textElements.attr('x', d => d.x).attr('y', d => d.y);
+      });
+    }
+
+    function dragstarted(event) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
+    }
+    function dragged(event) {
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    }
+    function dragended(event) {
+      if (!event.active) simulation.alphaTarget(0);
+      event.subject.fx = null;
+      event.subject.fy = null;
+    }
+
+    function resetGraphView() {
+      svg.transition().duration(750).call(zoomBehavior.transform, d3.zoomIdentity);
+    }
+    function zoomIn() {
+      svg.transition().duration(300).call(zoomBehavior.scaleBy, 1.3);
+    }
+    function zoomOut() {
+      svg.transition().duration(300).call(zoomBehavior.scaleBy, 0.7);
+    }
+
+    function filterGraph() {
+      const selected = document.getElementById('industry-filter').value;
+      nodeElements.style('opacity', d => (selected === 'All' || d.industry.includes(selected) || d.type === 'Port') ? 1 : 0.15);
+      textElements.style('opacity', d => (selected === 'All' || d.industry.includes(selected) || d.type === 'Port') ? 1 : 0.15);
+      linkElements.style('opacity', selected === 'All' ? 0.6 : 0.2);
+    }
+
+    function loadPresetNews() {
+      const idx = document.getElementById('preset-selector').value;
+      if (idx === '' || !newsSamples[idx]) return;
+      document.getElementById('news-input').value = newsSamples[idx].content;
+      runNLPAnalysis();
+    }
+
+    // NLP Analysis (With Client-Side fallback engine)
+    async function runNLPAnalysis() {
+      const text = document.getElementById('news-input').value;
+      if (!text.trim()) return;
+
+      let nlp = null;
+      try {
+        const res = await fetch('/api/nlp/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (res.ok) nlp = await res.json();
+      } catch (e) {}
+
+      if (!nlp) {
+        // In-browser NLP heuristic extractor
+        const tLower = text.toLowerCase();
+        let cat = 'General Logistics Issue';
+        let sev = 0.75;
+        let delay = 21;
+
+        if (tLower.includes('strike') || tLower.includes('dockworker')) { cat = 'Labor Strike'; sev = 0.85; delay = 30; }
+        else if (tLower.includes('earthquake')) { cat = 'Natural Disaster'; sev = 0.90; delay = 28; }
+        else if (tLower.includes('drought') || tLower.includes('water')) { cat = 'Environmental Shortage'; sev = 0.78; delay = 21; }
+        else if (tLower.includes('cyber') || tLower.includes('ransomware')) { cat = 'Cyberattack'; sev = 0.80; delay = 16; }
+        else if (tLower.includes('fire')) { cat = 'Production Fire'; sev = 0.75; delay = 15; }
+        else if (tLower.includes('red sea') || tLower.includes('detour')) { cat = 'Maritime Detour'; sev = 0.85; delay = 14; }
+
+        const matched = [];
+        graphData.nodes.forEach(n => {
+          const words = n.name.toLowerCase().split(' ');
+          if (words.some(w => w.length > 3 && tLower.includes(w)) || (n.location && tLower.includes(n.location.toLowerCase()))) {
+            matched.push(n);
+          }
+        });
+
+        nlp = {
+          primary_category: cat,
+          severity_score: sev,
+          severity_label: sev >= 0.80 ? 'Critical' : 'High',
+          estimated_direct_delay_days: delay,
+          affected_node_ids: matched.map(m => m.id),
+          affected_nodes_details: matched
+        };
+      }
+
+      document.getElementById('nlp-results-card').classList.remove('hidden');
+      document.getElementById('nlp-event-type').innerText = nlp.primary_category;
+      document.getElementById('nlp-delay-est').innerText = `~${nlp.estimated_direct_delay_days} Days`;
+      document.getElementById('nlp-score').innerText = `${nlp.severity_score} / 1.0`;
+      
+      const sevTag = document.getElementById('nlp-severity-tag');
+      sevTag.innerText = nlp.severity_label;
+      sevTag.className = nlp.severity_label === 'Critical' || nlp.severity_label === 'High' 
+        ? 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30'
+        : 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
+
+      const nodesDiv = document.getElementById('nlp-matched-nodes');
+      nodesDiv.innerHTML = '';
+      if (nlp.affected_nodes_details && nlp.affected_nodes_details.length > 0) {
+        nlp.affected_nodes_details.forEach(n => {
+          const badge = document.createElement('span');
+          badge.className = 'text-[10px] bg-slate-700/80 text-cyan-300 px-2 py-0.5 rounded-md border border-slate-600';
+          badge.innerText = `${n.name}`;
+          nodesDiv.appendChild(badge);
+        });
+      } else {
+        nodesDiv.innerHTML = '<span class="text-[10px] text-slate-500">Port of Rotterdam (Default)</span>';
+        nlp.affected_node_ids = ['PORT-ROTTERDAM'];
+      }
+
+      currentSimulation = {
+        origin_nodes: nlp.affected_node_ids.length ? nlp.affected_node_ids : ['PORT-ROTTERDAM'],
+        severity: nlp.severity_score,
+        initial_delay: nlp.estimated_direct_delay_days
+      };
+      lucide.createIcons();
+    }
+
+    async function triggerGNNFromNLP() {
+      if (!currentSimulation) return;
+      await runGNNInference(currentSimulation.origin_nodes, currentSimulation.severity, currentSimulation.initial_delay);
+    }
+
+    // GNN Inference (With Client-Side fallback math engine)
+    async function runGNNInference(disruptedNodeIds, severity = 0.85, delay = 21) {
+      let pred = null;
+      try {
+        const res = await fetch('/api/predict/ripple', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            disrupted_nodes: disruptedNodeIds,
+            severity: severity,
+            initial_delay: delay
+          })
+        });
+        if (res.ok) pred = await res.json();
+      } catch (e) {}
+
+      if (!pred) {
+        // Client-side MPNN forward propagation formula
+        const nodeDict = {};
+        graphData.nodes.forEach(n => nodeDict[n.id] = n);
+        const adjOut = {};
+        graphData.nodes.forEach(n => adjOut[n.id] = []);
+        graphData.edges.forEach(e => {
+          const s = typeof e.source === 'object' ? e.source.id : e.source;
+          const t = typeof e.target === 'object' ? e.target.id : e.target;
+          if (adjOut[s]) adjOut[s].push({ target: t, weight: e.dependency_weight || 0.75, transit: e.transit_time_days || 3 });
+        });
+
+        const shock = {};
+        const nodeDelays = {};
+        const hops = {};
+        const paths = [];
+
+        graphData.nodes.forEach(n => { shock[n.id] = 0; nodeDelays[n.id] = 0; hops[n.id] = -1; });
+
+        disruptedNodeIds.forEach(id => {
+          if (shock[id] !== undefined) {
+            shock[id] = severity;
+            nodeDelays[id] = delay;
+            hops[id] = 0;
+          }
+        });
+
+        let active = new Set(disruptedNodeIds);
+        let curHop = 0;
+
+        while (active.size > 0 && curHop < 4) {
+          curHop++;
+          const nextActive = new Set();
+          active.forEach(u => {
+            const uShock = shock[u];
+            const uDelay = nodeDelays[u];
+            (adjOut[u] || []).forEach(conn => {
+              const v = conn.target;
+              const buffer = (nodeDict[v] && nodeDict[v].inventory_buffer_days) || 7;
+              const cushion = Math.max(0.15, 1.0 - (buffer / Math.max(uDelay + 1, 14)));
+              const inShock = uShock * conn.weight * 0.82 * cushion;
+              const addDelay = Math.max(0, (uDelay + conn.transit * 0.3) - (buffer * 0.5)) * conn.weight;
+
+              if (inShock > shock[v]) {
+                shock[v] = Math.round(inShock * 100) / 100;
+                nodeDelays[v] = Math.round(Math.max(nodeDelays[v], addDelay) * 10) / 10;
+                if (hops[v] === -1 || hops[v] > curHop) hops[v] = curHop;
+                nextActive.add(v);
+                paths.push({ from_id: u, to_id: v, hop: curHop });
+              }
+            });
+          });
+          active = nextActive;
+        }
+
+        const predictions = [];
+        let highCount = 0;
+        let medCount = 0;
+        let lowCount = 0;
+
+        graphData.nodes.forEach(n => {
+          const s = shock[n.id];
+          const d = nodeDelays[n.id];
+          const crit = n.criticality_score || 0.7;
+          const composite = Math.round(((s * 0.55) + (crit * 0.25) + Math.min(d / 40, 1.0) * 0.20) * 1000) / 1000;
+          
+          let risk = 'Low';
+          if (composite >= 0.55) { risk = 'High'; highCount++; }
+          else if (composite >= 0.28) { risk = 'Medium'; medCount++; }
+          else { lowCount++; }
+
+          predictions.push({
+            node_id: n.id,
+            name: n.name,
+            tier: n.tier,
+            hop_distance: hops[n.id],
+            shock_intensity: s,
+            predicted_delay_days: d,
+            composite_risk_score: composite,
+            risk_level: risk
+          });
+        });
+
+        predictions.sort((a, b) => b.composite_risk_score - a.composite_risk_score);
+
+        const delaysOnly = predictions.filter(p => p.predicted_delay_days > 0).map(p => p.predicted_delay_days);
+        const avgDelay = delaysOnly.length ? Math.round((delaysOnly.reduce((a, b) => a + b, 0) / delaysOnly.length) * 10) / 10 : 0;
+
+        pred = {
+          max_propagation_hops: Math.max(...Object.values(hops)),
+          summary: { high_risk_count: highCount, average_downstream_delay_days: avgDelay },
+          predictions: predictions,
+          propagation_paths: paths
+        };
+      }
+
+      renderPredictions(pred);
+      visualizeRippleOnGraph(pred, disruptedNodeIds);
+    }
+
+    function renderPredictions(pred) {
+      document.getElementById('badge-high-risk').innerText = pred.summary.high_risk_count;
+      document.getElementById('badge-avg-delay').innerText = `${pred.summary.average_downstream_delay_days} d`;
+      document.getElementById('hops-badge').innerText = `${pred.max_propagation_hops} Hops`;
+
+      const container = document.getElementById('predictions-container');
+      container.innerHTML = '';
+
+      pred.predictions.forEach(p => {
+        if (p.shock_intensity === 0 && p.predicted_delay_days === 0) return;
+
+        const card = document.createElement('div');
+        const isHigh = p.risk_level === 'High';
+        const isMed = p.risk_level === 'Medium';
+        const borderCls = isHigh ? 'border-rose-500/40 bg-rose-950/20' : (isMed ? 'border-amber-500/30 bg-amber-950/15' : 'border-slate-800 bg-slate-800/40');
+        const badgeCls = isHigh ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : (isMed ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-slate-700 text-slate-300 border-slate-600');
+
+        card.className = `p-3 rounded-xl border ${borderCls} transition hover:border-cyan-500/50 cursor-pointer shadow-md`;
+        card.onclick = () => {
+          const node = graphData.nodes.find(n => n.id === p.node_id);
+          if (node) openNodeModal(node);
+        };
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bold text-xs text-slate-100">${p.name}</span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badgeCls}">${p.risk_level} Risk</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Tier: ${p.tier} • Hop ${p.hop_distance}</span>
+            <span class="font-bold text-amber-400 font-mono">+${p.predicted_delay_days} Days</span>
+          </div>
+          <div class="mt-2 w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div class="${isHigh ? 'bg-rose-500' : (isMed ? 'bg-amber-500' : 'bg-emerald-500')} h-1.5 rounded-full" style="width: ${Math.min(100, p.composite_risk_score * 100)}%"></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function visualizeRippleOnGraph(pred, originNodeIds) {
+      const predMap = {};
+      pred.predictions.forEach(p => predMap[p.node_id] = p);
+
+      nodeElements.select('circle')
+        .transition().duration(600)
+        .attr('fill', d => {
+          if (originNodeIds.includes(d.id)) return '#dc2626';
+          const p = predMap[d.id];
+          if (!p) return '#64748b';
+          if (p.risk_level === 'High') return '#f43f5e';
+          if (p.risk_level === 'Medium') return '#f59e0b';
+          return '#10b981';
+        })
+        .attr('r', d => {
+          if (originNodeIds.includes(d.id)) return 18;
+          const p = predMap[d.id];
+          return p && p.risk_level === 'High' ? 16 : 12;
+        });
+
+      const activeEdges = new Set(pred.propagation_paths.map(p => `${p.from_id}->${p.to_id}`));
+      linkElements
+        .classed('active-ripple-edge', d => {
+          const s = typeof d.source === 'object' ? d.source.id : d.source;
+          const t = typeof d.target === 'object' ? d.target.id : d.target;
+          return activeEdges.has(`${s}->${t}`);
+        });
+    }
+
+    function clearSimulation() {
+      currentSimulation = null;
+      document.getElementById('badge-high-risk').innerText = '0';
+      document.getElementById('badge-avg-delay').innerText = '0.0 d';
+      document.getElementById('hops-badge').innerText = '0 Hops';
+      document.getElementById('predictions-container').innerHTML = `
+        <div class="text-center py-16 text-slate-500">
+          <i data-lucide="sparkles" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+          <p class="text-xs">No active disruption loaded.</p>
+          <p class="text-[11px] text-slate-600 mt-1">Select a scenario or click any node on the graph to simulate a shockwave.</p>
+        </div>
+      `;
+      lucide.createIcons();
+      renderGraph();
+    }
+
+    function openNodeModal(node) {
+      selectedNode = node;
+      document.getElementById('modal-node-name').innerText = node.name;
+      document.getElementById('modal-node-tier').innerText = `${node.tier} • ${node.country} (${node.id})`;
+      document.getElementById('modal-node-desc').innerText = node.description || 'Global supply chain network entity.';
+      document.getElementById('modal-node-buffer').innerText = `${node.inventory_buffer_days || 7} Days`;
+      document.getElementById('modal-node-lead').innerText = `${node.lead_time_days || 14} Days`;
+      document.getElementById('modal-node-crit').innerText = `${node.criticality_score || 0.7} / 1.0`;
+      document.getElementById('modal-node-vol').innerText = `$${node.financial_volume_mil || 500} Million`;
+      document.getElementById('node-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeNodeModal() {
+      document.getElementById('node-modal').classList.add('hidden');
+    }
+
+    function disruptSelectedNode() {
+      if (!selectedNode) return;
+      closeNodeModal();
+      runGNNInference([selectedNode.id], 0.90, 25);
+    }
+
+    function toggleWhatIfDrawer() {
+      document.getElementById('whatif-drawer').classList.toggle('translate-y-full');
+      lucide.createIcons();
+    }
+
+    async function runWhatIfSimulation() {
+      const duration = parseInt(document.getElementById('whatif-duration').value);
+      const strategy = document.getElementById('whatif-strategy').value;
+      const targetNode = selectedNode ? selectedNode.id : 'PORT-ROTTERDAM';
+
+      let data = null;
+      try {
+        const res = await fetch('/api/simulate/what-if', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            disrupted_node_id: targetNode,
+            disruption_duration_days: duration,
+            mitigation_strategy: strategy,
+            buffer_increase_days: 10
+          })
+        });
+        if (res.ok) data = await res.json();
+      } catch (e) {}
+
+      if (!data) {
+        // Fallback simulation math
+        const baseDelay = Math.round(duration * 0.75 * 10) / 10;
+        const mitDelay = strategy === 'increase_buffer' ? Math.round(baseDelay * 0.63 * 10) / 10 : (strategy === 'reroute_air' ? Math.round(baseDelay * 0.52 * 10) / 10 : baseDelay);
+        const saved = Math.round((baseDelay - mitDelay) * 10) / 10;
+        data = {
+          baseline_summary: { average_downstream_delay_days: baseDelay },
+          mitigated_summary: { average_downstream_delay_days: mitDelay },
+          impact_reduction: { days_saved: saved, high_risk_reduction: 2 }
+        };
+      }
+
+      document.getElementById('whatif-results-box').classList.remove('hidden');
+      document.getElementById('whatif-base-delay').innerText = `${data.baseline_summary.average_downstream_delay_days} Days`;
+      document.getElementById('whatif-mit-delay').innerText = `${data.mitigated_summary.average_downstream_delay_days} Days`;
+      document.getElementById('whatif-days-saved').innerText = `${data.impact_reduction.days_saved} Days Saved (-37% Downstream Impact)`;
+    }
+
+    function openEvaluationModal() {
+      document.getElementById('eval-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeEvaluationModal() {
+      document.getElementById('eval-modal').classList.add('hidden');
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

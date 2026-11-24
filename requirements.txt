@@ -1,0 +1,28 @@
+# AtmoGraph Python Dependencies
+# B.Tech Final-Year Project: Supply Chain Ripple Effect Predictor
+
+# Backend API & Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+
+# Graph Database & Network Analytics
+neo4j>=5.26.0
+networkx>=3.4.0
+
+# Natural Language Processing
+spacy>=3.8.0
+# Model download: python -m spacy download en_core_web_sm
+transformers>=4.47.0
+
+# Deep Learning & Graph Neural Networks
+torch>=2.5.0
+torch-geometric>=2.6.0
+numpy>=2.1.0
+scikit-learn>=1.6.0
+scipy>=1.14.0
+
+# Utilities & Visualization
+matplotlib>=3.10.0
+requests>=2.32.0
+python-dotenv>=1.0.1

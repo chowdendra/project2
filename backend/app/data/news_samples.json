@@ -1,0 +1,74 @@
+[
+  {
+    "id": "NEWS-001",
+    "title": "Massive Dockworkers Strike Shuts Down Port of Rotterdam Container Terminals",
+    "source": "Global Maritime Logistics Review",
+    "published_at": "2026-11-20T08:30:00Z",
+    "content": "Port of Rotterdam operations came to an abrupt halt this morning as over 3,000 crane operators and dockworkers launched an open-ended wage strike. More than 45 container vessels are stranded in the North Sea unable to offload critical automotive components, chemical supplies, and high-tech parts destined for German factories including BMW and Tesla Gigafactory Berlin. Logistics analysts predict delays of 25 to 35 days across European supply chains if the labor dispute remains unresolved.",
+    "expected_event": "Labor Strike",
+    "expected_location": "Port of Rotterdam, Netherlands",
+    "expected_entity": "PORT-ROTTERDAM",
+    "severity": "High",
+    "category": "Transportation Disruption"
+  },
+  {
+    "id": "NEWS-002",
+    "title": "Magnitude 6.8 Earthquake Strikes Central Taiwan; TSMC Suspends Cleanroom Operations",
+    "source": "Asia Tech Straits Herald",
+    "published_at": "2026-11-21T14:15:00Z",
+    "content": "A powerful 6.8 magnitude earthquake struck Tainan County in southern Taiwan, triggering automatic safety shutdowns at TSMC Fab 18. Precision ASML EUV lithography machinery experienced minor alignment distortions, and silicon wafer batches were discarded due to micro-vibrations. TSMC stated that safety inspections are underway, but output of 3nm Apple processors and automotive microcontrollers could face a disruption backlog of 3 to 4 weeks.",
+    "expected_event": "Natural Disaster",
+    "expected_location": "Taiwan, Tainan",
+    "expected_entity": "SUP-CHIP-TSMC",
+    "severity": "High",
+    "category": "Facility & Production Halt"
+  },
+  {
+    "id": "NEWS-003",
+    "title": "Severe Drought Forces Water Rationing at Atacama Lithium Evaporation Fields in Chile",
+    "source": "Mining & Clean Energy Bulletin",
+    "published_at": "2026-11-18T11:00:00Z",
+    "content": "Prolonged arid conditions in Northern Chile have forced regional authorities to enforce a 40% reduction in industrial groundwater pumping at Albemarle Salar extraction facilities. Lithium brine processing yields are anticipated to slump by 30% over the next quarter, threatening battery cathode supply schedules for CATL and subsequent European EV manufacturers.",
+    "expected_event": "Resource & Environmental Restriction",
+    "expected_location": "Chile, Atacama",
+    "expected_entity": "SUP-LITHIUM-01",
+    "severity": "Medium",
+    "category": "Raw Material Shortage"
+  },
+  {
+    "id": "NEWS-004",
+    "title": "Cyberattack Knocks Out Dispatch and Telemetry Systems at Bosch Mobility Stuttgart",
+    "source": "Automotive Cyber Defense Wire",
+    "published_at": "2026-11-22T09:45:00Z",
+    "content": "A sophisticated ransomware attack targeted Bosch Mobility's primary logistics integration server in Stuttgart yesterday evening. Automated warehouse robotics and just-in-time shipment dispatches to BMW Munich and Tesla Berlin have been halted as IT engineers isolate affected subnetworks. Plant managers estimate a 12 to 18 day delivery delay for critical vehicle electronic control units (ECU).",
+    "expected_event": "Cyberattack",
+    "expected_location": "Germany, Stuttgart",
+    "expected_entity": "MFG-BOSCH-AUTO",
+    "severity": "High",
+    "category": "Cyber & Systems Failure"
+  },
+  {
+    "id": "NEWS-005",
+    "title": "Chemical Reactor Fire at BASF Ludwigshafen Complex Temporarily Halts Precursor Synthesis",
+    "source": "European Chemical Weekly",
+    "published_at": "2026-11-19T16:20:00Z",
+    "content": "A contained chemical fire in building C-42 at BASF's Ludwigshafen flagship facility has resulted in an emergency shutdown of the organic synthesizer line. The facility provides active precursor chemicals for pharmaceutical manufacturers including Divi's Laboratories and Novartis formulation plants. While no casualties were reported, specialized catalyst replacement will take an estimated 15 days.",
+    "expected_event": "Industrial Accident / Fire",
+    "expected_location": "Germany, Ludwigshafen",
+    "expected_entity": "SUP-CHEM-04",
+    "severity": "Medium",
+    "category": "Production Halt"
+  },
+  {
+    "id": "NEWS-006",
+    "title": "Red Sea Security Crisis Extends Containership Sailing Times Around Cape of Good Hope",
+    "source": "Global Shipping Times",
+    "published_at": "2026-11-23T07:10:00Z",
+    "content": "Commercial container ships traveling between Shanghai, Singapore, and European destinations via the Suez Canal are actively diverting around South Africa's Cape of Good Hope due to regional missile threats. The detour adds 10 to 14 sailing days and escalates bunker fuel surcharges by 35%, causing widespread vessel stacking at Port of Rotterdam and delays in downstream consumer goods fulfillment at Amazon EU.",
+    "expected_event": "Geopolitical & Maritime Blockage",
+    "expected_location": "Suez Canal / Port of Rotterdam",
+    "expected_entity": "PORT-ROTTERDAM",
+    "severity": "High",
+    "category": "Transportation Disruption"
+  }
+]

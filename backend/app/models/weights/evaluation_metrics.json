@@ -1,0 +1,51 @@
+{
+  "model_name": "AtmoGraph MPNN Ripple Predictor",
+  "episodes_evaluated": 50,
+  "total_node_evaluations": 1150,
+  "classification_metrics": {
+    "overall_accuracy": 0.8026,
+    "macro_f1": 0.7217,
+    "per_class": {
+      "Low": {
+        "precision": 0.9598,
+        "recall": 0.8328,
+        "f1_score": 0.8918,
+        "support": 861
+      },
+      "Medium": {
+        "precision": 0.3621,
+        "recall": 0.7622,
+        "f1_score": 0.491,
+        "support": 143
+      },
+      "High": {
+        "precision": 0.951,
+        "recall": 0.6644,
+        "f1_score": 0.7823,
+        "support": 146
+      }
+    },
+    "confusion_matrix": {
+      "Low": {
+        "Low": 717,
+        "Medium": 144,
+        "High": 0
+      },
+      "Medium": {
+        "Low": 29,
+        "Medium": 109,
+        "High": 5
+      },
+      "High": {
+        "Low": 1,
+        "Medium": 48,
+        "High": 97
+      }
+    }
+  },
+  "delay_regression_metrics": {
+    "mae_days": 2.16,
+    "rmse_days": 3.929,
+    "description": "Mean Absolute Error and Root Mean Squared Error for predicted shipment delay in days"
+  }
+}
